@@ -68,9 +68,6 @@ public class Cache {
             if (document.exists()) {
                 Map<String, Object> data = document.getData();
                 docRef.update("friends", data.get("friends") + ", " + friendUserNames);
-//                ApiFuture<WriteResult> future = docRef.update("friends", data.get("friends") + ", " + friendUserNames);
-//                WriteResult result = future.get();
-//                System.out.println("Write result: " + result);
             } else {
                 Map<String, Object> data = new HashMap<>();
                 data.put("friends", friendUserNames);
@@ -118,24 +115,6 @@ public class Cache {
 
         return result;
     }
-
-//    public UIContent getUIContent(String url) {
-//        url = getEncodedURL(url);
-//        UIContent uiContent = null;
-//        try {
-//            DocumentReference docRef = db.collection(USER_INFO).document(url);
-//            ApiFuture<DocumentSnapshot> future = docRef.get();
-//            DocumentSnapshot document = future.get();
-//            if(document.exists()) {
-//                Map<String, Object> data = document.getData();
-//                uiContent = new UIContent((String)data.get("imageURL"), (String)data.get("aggregatedFrequencies"));
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        return uiContent;
-//    }
 
     public List<UserInfo> getCurrentFriends(String username) {
         List<UserInfo> currentFriends = new ArrayList<>();

@@ -67,7 +67,9 @@ public class Main implements HttpFunction {
     }
 
     private String addNewUsers(String username, String newFriends) {
-        cache.addNewFriends(username, newFriends);
+        if(!StringUtils.isEmpty(newFriends))
+            cache.addNewFriends(username, newFriends);
+
         JSONObject result = new JSONObject();
         result.put("status", Constants.SUCCESS);
 
