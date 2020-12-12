@@ -1,6 +1,7 @@
-package functions;
+package functions.services;
 
 import com.google.cloud.functions.HttpRequest;
+import functions.Client;
 import functions.helper.Constants;
 import functions.pojo.UserInfo;
 import org.json.simple.JSONObject;
@@ -50,17 +51,19 @@ public class SessionStorage {
     }
 
     public static String verifyUser(HttpRequest request) {
-        Optional<String> username = getCookie(request);
-        if(username.isEmpty())
+        Optional<String> username = request.getFirstQueryParameter("username");
+        Optional<String> password = request.getFirstQueryParameter("password");
+        if(username.isEmpty() || password.isEmpty())
             return "";
 
         try {
             JSONObject json = new JSONObject();
             json.put("username", username.get());
+            json.put("password", password.get());
 
             Map<String, String> data = Client.getData(sessionStorageURL, "verifyUser", json);
             String status = data.get(Constants.STATUS);
-            return status.equals(Constants.SUCCESS) ? status : "";
+            return status.equals(Constants.SUCCESS) ? username.get() : "";
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -69,7 +72,7 @@ public class SessionStorage {
     }
 
     public static void addNewFriends(HttpRequest request) {
-        Optional<String> username = getCookie(request);
+        Optional<String> username = getUsernameFromCookie(request);
         if(username.isEmpty())
             return;
 
@@ -90,8 +93,34 @@ public class SessionStorage {
         }
     }
 
-    private static Optional<String> getCookie(HttpRequest request) {
-        Optional<String> username = request.getFirstHeader("Cookie");
-        return username;
+    public static List<UserInfo> getCurrentFriends(HttpRequest request) {
+        List<UserInfo> currentFriends = new ArrayList<>();
+        Optional<String> username = getUsernameFromCookie(request);
+        if(username.isEmpty())
+            return new ArrayList<>();
+
+        JSONObject json = new JSONObject();
+        json.put("username", username.get());
+
+        try {
+            Map<String, String> data = Client.getData(sessionStorageURL, "getCurrentFriends", json);
+            for(String key : data.keySet()) {
+                String[] names = data.get(key).split(" ");
+                currentFriends.add(new UserInfo(key, "", names[0], names[1]));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return currentFriends;
     }
+
+    private static Optional<String> getUsernameFromCookie(HttpRequest request) {
+        Optional<String> cookie = request.getFirstHeader("Cookie");
+        if(cookie.isEmpty())
+            return cookie;
+
+        return Optional.of(cookie.get().replaceFirst(Constants.SESSION_COOKIE + "=", ""));
+    }
+
 }

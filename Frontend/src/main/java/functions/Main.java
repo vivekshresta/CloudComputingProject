@@ -3,22 +3,21 @@ package functions;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import functions.cache.Cache;
-import functions.cache.UIContent;
+import functions.helper.Constants;
+import functions.pojo.PostInfo;
 import functions.pojo.UserInfo;
+import functions.services.PostStorage;
+import functions.services.SessionStorage;
 import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Main implements HttpFunction {
-    private String frequencyGeneratorURL = "https://us-central1-vivekshresta-bandaru.cloudfunctions.net/frequency-function";
-    private String histogramGeneratorURL = "https://us-central1-vivekshresta-bandaru.cloudfunctions.net/histogram_function";
-    private Cache cache = new Cache();
 
     @Override
     public void service(HttpRequest request, HttpResponse response) throws IOException {
@@ -42,18 +41,71 @@ public class Main implements HttpFunction {
                 out.write(getSignupPage());
             }
         } else if(path.contains("dashboard")) {
-            //String username = SessionStorage.verifyUser(request);
-            String username = "vivek";
+            String username = SessionStorage.verifyUser(request);
+            addCookie(response, username);
             String result = StringUtils.isEmpty(username) ? getLoginPage() : getAddFriendView(username);
             out.write(result);
         } else if(path.contains("addfriends")) {
             SessionStorage.addNewFriends(request);
-            out.write(getPostsView());
+            out.write(getPostsView(request));
+        } else if(path.contains("addpost")) {
+            submitPost(request);
+            out.write(getPostsView(request));
+        } else if(path.contains("logout")) {
+            addCookie(response, "");
+            out.write(getHomePage());
         }
     }
 
-    private String getPostsView() {
-        return null;
+    private void submitPost(HttpRequest request) {
+        PostStorage.submitPost(request);
+    }
+
+    private void addCookie(HttpResponse response, String username) {
+        if(!StringUtils.isEmpty(username))
+            response.appendHeader("Set-Cookie", Constants.SESSION_COOKIE + "=" + username);
+    }
+
+    private String getPostsView(HttpRequest request) {
+        try {
+            List<UserInfo> friends = SessionStorage.getCurrentFriends(request);
+            Map<String, String> usernameToFullName = getUsernameToFullName(friends);
+            List<PostInfo> posts = PostStorage.generateTimeline(request, friends);
+            StringBuilder sb = new StringBuilder();
+            sb.append(getAddPostView());
+            for(PostInfo post : posts) {
+                sb.append("<b>").append(usernameToFullName.get(post.getUsername())).append(":</b><br>");
+                sb.append(post.getPostData()).append("<br><br>");
+            }
+
+            sb.append(getLogoutView());
+            return sb.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getLoginPage();
+        }
+    }
+
+    private Map<String, String> getUsernameToFullName(List<UserInfo> friends) {
+        Map<String, String> usernameToFullname = new HashMap<>();
+        for(UserInfo userInfo : friends)
+            usernameToFullname.computeIfAbsent(userInfo.getUsername(), (k) -> userInfo.getFirstName() + " " + userInfo.getLastName());
+
+        return usernameToFullname;
+    }
+
+    private String getAddPostView() {
+        return "<form action = /frontend-function/addpost method=\"POST\">\n" +
+                "  <b><label for=\"username\">Create a new post:</label><br></b>\n" +
+                "  <input type=\"text\" id=\"post\" name=\"post\"><br>\n" +
+                "  <input type=\"submit\" value=\"Submit\"><br><br>\n" +
+                "</form>\n";
+    }
+
+    private String getLogoutView() {
+        return "<form action = /frontend-function/logout method=\"POST\">\n" +
+                "  <input type=\"submit\" value=\"Logout\"><br><br>\n" +
+                "</form>\n";
     }
 
     private void registerUser(HttpRequest request) throws Exception {
@@ -67,7 +119,7 @@ public class Main implements HttpFunction {
                 "\n" +
                 "<form action = /frontend-function/signup method=\"POST\">\n" +
                 "\t\t<input type=\"submit\" value=\"Signup\" name=\"Signup\" id=\"signup\"/>\n" +
-                "</form>";
+                "</form>\n";
     }
 
     private String getSignupPage() {
@@ -83,21 +135,21 @@ public class Main implements HttpFunction {
                 "  <input type=\"text\" id=\"password\" name=\"password\"><br><br>\n" +
                 "\n" +
                 "  <input type=\"submit\" value=\"Submit\">\n" +
-                "</form>";
+                "</form>\n";
     }
 
     private String getAddFriendView(String currentUser) {
         String searchUI = "<form action = /frontend-function/search method=\"POST\">\n" +
                 "  <label for=\"search\">Search for a friend:</label><br>\n" +
                 "  <input type=\"text\" id=\"query\" name=\"query\"><br><br>\n" +
-                "</form>";
+                "</form>\n";
 
-        //List<UserInfo> newFriends = SessionStorage.getNewFriends(currentUser);
-        List<UserInfo> newFriends = new ArrayList<>();
-        newFriends.add(new UserInfo("kartik", "", "Kartik", "Addala"));
-        newFriends.add(new UserInfo("prashant", "", "prashanth", "sateesh"));
-        newFriends.add(new UserInfo("anshul", "", "Anshul", "Vohra"));
-        newFriends.add(new UserInfo("vansh", "", "Vansh", "Shah"));
+        List<UserInfo> newFriends = SessionStorage.getNewFriends(currentUser);
+//        List<UserInfo> newFriends = new ArrayList<>();
+//        newFriends.add(new UserInfo("kartik", "", "Kartik", "Mallajosyula"));
+//        newFriends.add(new UserInfo("prashant", "", "prashanth", "sateesh"));
+//        newFriends.add(new UserInfo("anshul", "", "Anshul", "Vohra"));
+//        newFriends.add(new UserInfo("vansh", "", "Vansh", "Shah"));
         StringBuilder sb = new StringBuilder(searchUI);
         sb.append("<form action = /frontend-function/addfriends method=\"POST\">\n");
         sb.append("Add friends: <br>\n");
@@ -121,44 +173,6 @@ public class Main implements HttpFunction {
                 "  <label for=\"password\">Password:</label><br>\n" +
                 "  <input type=\"text\" id=\"password\" name=\"password\"><br><br>\n" +
                 "  <input type=\"submit\" value=\"Submit\">\n" +
-                "</form>";
-    }
-
-    private String getFinalPage(String url) {
-        StringBuilder result = new StringBuilder(getHomePage()).append("\n");
-
-        try {
-            long initialTime = System.currentTimeMillis();
-            UIContent uiContent = getUIContent(url);
-            result.append("<body>\n").append("<img src=\"").append(uiContent.getImageURL()).append("\" alt=\"Histogram image\">\n")
-                    .append("<br>")
-                    .append("\t<div>The time taken to generate the frequency distribution and histogram: ").append(System.currentTimeMillis() - initialTime).append(" ms</div>\n")
-                    .append("<br>")
-                    .append("\t<div><b>Frequency distribution for sentence lengths:</b> (Format - Sentence length: Number of occurrences)\" </div>\n")
-                    .append("\t<div>").append(uiContent.getAggregatedFrequencies()).append("</div>\n")
-                    .append("</body>");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return result.toString();
-    }
-
-    private UIContent getUIContent(String url) throws IOException {
-        UIContent uiContent = cache.getUIContent(url);
-        if(uiContent == null) {
-            JSONObject json = new JSONObject();
-            json.put("url", url);
-            Map<String, String> frequencies = Client.getData(frequencyGeneratorURL, "", json);
-
-            json.put("frequencies", frequencies.get("frequencies"));
-            String imageURL = Client.getData(histogramGeneratorURL, "", json).get("histogramURL").trim();
-            String aggregatedFrequencies = frequencies.get("aggregatedFrequencies");
-
-            cache.addUIContent(url, imageURL, aggregatedFrequencies);
-            uiContent = new UIContent(imageURL, aggregatedFrequencies);
-        }
-
-        return uiContent;
+                "</form>\n";
     }
 }
