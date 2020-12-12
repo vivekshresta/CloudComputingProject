@@ -6,7 +6,7 @@ public class UserInfo {
     private String username;
     private String password;
 
-    public UserInfo(String firstName, String lastName, String username, String password) {
+    public UserInfo(String username, String password, String firstName, String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
@@ -20,7 +20,7 @@ public class UserInfo {
 
     @Override
     public boolean equals(Object other) {
-        return this.username.equals(((UserInfo)other).username);
+        return this.username.equals(((UserInfo)other).getUsername());
     }
 
     public String getFirstName() {

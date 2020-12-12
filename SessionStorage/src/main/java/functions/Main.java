@@ -38,7 +38,32 @@ public class Main implements HttpFunction {
                 break;
             case "addNewFriends":
                 out.write(addNewUsers(postBody.get("username"), postBody.get("newFriends")));
+                break;
+            case "getCurrentFriends":
+                out.write(getCurrentFriends(postBody.get("username")));
+                break;
         }
+    }
+
+    private String getCurrentFriends(String username) {
+        return buildFriendsJson(cache.getCurrentFriends(username));
+    }
+
+    private String getNewFriends(String username) {
+        return buildFriendsJson(cache.getNewFriends(username));
+    }
+
+    private String buildFriendsJson(Collection<UserInfo> friends) {
+        StringBuilder json = new StringBuilder();
+
+        json.append("{\n");
+        for(UserInfo user : friends)
+            json.append("\"").append(user.getUsername()).append("\":\"").
+                    append(user.getFirstName()).append(" ").append(user.getLastName()).append("\",\n");
+        json.replace(json.length() - 2, json.length(), "");
+        json.append("\n}");
+
+        return json.toString();
     }
 
     private String addNewUsers(String username, String newFriends) {
@@ -47,20 +72,6 @@ public class Main implements HttpFunction {
         result.put("status", Constants.SUCCESS);
 
         return result.toJSONString();
-    }
-
-    private String getNewFriends(String username) {
-        Set<UserInfo> users = cache.getNewFriends(username);
-        StringBuilder json = new StringBuilder();
-
-        json.append("{\n");
-        for(UserInfo user : users)
-            json.append("\"").append(user.getUsername()).append("\":\"").
-                    append(user.getFirstName()).append(" ").append(user.getLastName()).append("\",\n");
-        json.replace(json.length() - 2, json.length(), "");
-        json.append("\n}");
-
-        return json.toString();
     }
 
     private String registerUser(String username, String password, String firstName, String lastName) {
