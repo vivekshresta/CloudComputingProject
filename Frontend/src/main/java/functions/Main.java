@@ -68,12 +68,14 @@ public class Main implements HttpFunction {
             Optional<String> username = SessionStorage.getUsernameFromCookie(request);
             List<UserInfo> friends = SessionStorage.getCurrentFriends(request);
             Map<String, String> usernameToFullName = getUsernameToFullName(friends);
-            List<PostInfo> posts = PostStorage.generateTimeline(request, friends);
+            List<PostInfo> posts = new ArrayList<>();
+            if(!friends.isEmpty())
+                posts = PostStorage.generateTimeline(request, friends);
             StringBuilder sb = new StringBuilder();
             sb.append(getAddPostView());
             for(PostInfo post : posts) {
-                String name = username.get().equals(post.getUsername()) ? "Me" : post.getUsername();
-                sb.append("<b>").append(usernameToFullName.get(name)).append(":</b><br>");
+                String name = username.get().equals(post.getUsername()) ? "Me" : usernameToFullName.get(post.getUsername());
+                sb.append("<b>").append(name).append(":</b><br>");
                 sb.append(post.getPostData()).append("<br><br>");
             }
 
