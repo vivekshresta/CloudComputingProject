@@ -50,7 +50,9 @@ public class Main implements HttpFunction {
 
     private String generateTimeline(String username, String friendsStr) {
         Set<PostInfo> posts = new HashSet<>();
-        String[] friends = friendsStr.split(", ");
+        List<String> friends = new ArrayList<>(Arrays.asList(friendsStr.split(", ")));
+        friends.add(username);
+
         for(String friend : friends) {
             PostInfo postInfo = cache.getPosts(friend);
             if(postInfo != null)

@@ -12,10 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Main implements HttpFunction {
 
@@ -68,13 +65,15 @@ public class Main implements HttpFunction {
 
     private String getPostsView(HttpRequest request) {
         try {
+            Optional<String> username = SessionStorage.getUsernameFromCookie(request);
             List<UserInfo> friends = SessionStorage.getCurrentFriends(request);
             Map<String, String> usernameToFullName = getUsernameToFullName(friends);
             List<PostInfo> posts = PostStorage.generateTimeline(request, friends);
             StringBuilder sb = new StringBuilder();
             sb.append(getAddPostView());
             for(PostInfo post : posts) {
-                sb.append("<b>").append(usernameToFullName.get(post.getUsername())).append(":</b><br>");
+                String name = username.get().equals(post.getUsername()) ? "Me" : post.getUsername();
+                sb.append("<b>").append(usernameToFullName.get(name)).append(":</b><br>");
                 sb.append(post.getPostData()).append("<br><br>");
             }
 

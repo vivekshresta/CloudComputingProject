@@ -117,7 +117,7 @@ public class SessionStorage {
         return currentFriends;
     }
 
-    private static Optional<String> getUsernameFromCookie(HttpRequest request) {
+    public static Optional<String> getUsernameFromCookie(HttpRequest request) {
         Optional<String> cookie = request.getFirstHeader("Cookie");
         if(cookie.isEmpty())
             return cookie;
