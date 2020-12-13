@@ -49,6 +49,7 @@ public class Main implements HttpFunction {
     }
 
     private String generateTimeline(String username, String friendsStr) {
+        friendsStr = friendsStr.trim();
         Set<PostInfo> posts = new HashSet<>();
         List<String> friends = new ArrayList<>(Arrays.asList(friendsStr.split(", ")));
         friends.add(username);
@@ -62,11 +63,13 @@ public class Main implements HttpFunction {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
 
-        for(PostInfo post : posts) {
-            json.append("\"").append(post.getUsername()).append("\"").append(":");
-            json.append("\"").append(post.getPost()).append("\"").append(",\n");
+        if(!posts.isEmpty()) {
+            for (PostInfo post : posts) {
+                json.append("\"").append(post.getUsername()).append("\"").append(":");
+                json.append("\"").append(post.getPost()).append("\"").append(",\n");
+            }
+            json.replace(json.length() - 2, json.length(), "");
         }
-        json.replace(json.length() - 2, json.length(), "");
         json.append("\n}");
 
         return json.toString();

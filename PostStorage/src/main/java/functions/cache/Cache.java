@@ -8,6 +8,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreOptions;
 import functions.helper.Constants;
 import functions.pojo.PostInfo;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -57,6 +58,9 @@ public class Cache {
     }
 
     public PostInfo getPosts(String friend) {
+        if(StringUtils.isEmpty(friend))
+            return null;
+
         DocumentReference docRef = db.collection(POSTS_INFO).document(friend);
         ApiFuture<DocumentSnapshot> futureSnapshot = docRef.get();
         try {

@@ -34,8 +34,7 @@ public class PostStorage {
         }
     }
 
-    public static List<PostInfo> generateTimeline(HttpRequest request, List<UserInfo> friends) throws Exception {
-        Optional<String> username = getUsernameFromCookie(request);
+    public static List<PostInfo> generateTimeline(Optional<String> username, List<UserInfo> friends) throws Exception {
         String friendsStr = listToString(friends);
         if(username.isEmpty())
             throw new Exception("No Cookie");
@@ -64,6 +63,9 @@ public class PostStorage {
     }
 
     private static String listToString(List<UserInfo> friends) {
+        if(friends.isEmpty())
+            return "";
+
         StringBuilder sb = new StringBuilder();
         for(UserInfo friend : friends)
             sb.append(friend.getUsername()).append(", ");

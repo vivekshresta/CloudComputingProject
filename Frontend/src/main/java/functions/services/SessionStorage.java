@@ -78,13 +78,13 @@ public class SessionStorage {
 
         JSONObject json = new JSONObject();
         Set<String> friends = request.getQueryParameters().keySet();
+        if(friends.isEmpty())
+            return;
 
         StringBuilder sb = new StringBuilder();
-        if(!friends.isEmpty()) {
-            for (String friend : friends)
-                sb.append(friend).append(",");
-            sb.replace(sb.length() - 1, sb.length(), "");
-        }
+        for (String friend : friends)
+            sb.append(friend).append(",");
+        sb.replace(sb.length() - 1, sb.length(), "");
         json.put("username", username.get());
         json.put("newFriends", sb.toString());
 
