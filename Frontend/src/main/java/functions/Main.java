@@ -118,7 +118,8 @@ public class Main implements HttpFunction {
     }
 
     private String getHomePage() {
-        return "<form action = /frontend-function/login method=\"POST\">\n" +
+        return "<h2>Welcome to hoosier connect</h2>\n" +
+                "<form action = /frontend-function/login method=\"POST\">\n" +
                 "\t\t<input type=\"submit\" value=\"Login\" name=\"Login\" id=\"login\"/>\n" +
                 "</form>\n" +
                 "\n" +
